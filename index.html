@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123d2b">
+  <meta name="description" content="Juego de penaltis para dos jugadores en el mismo móvil.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Penaltis · Duelo</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b2118; --panel:#123d2b; --line:#d9f0df; --gold:#ffd166; --white:#f6fff8; --muted:#b8d2c0; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--white); background:radial-gradient(ellipse at top,#1d6845 0,#0b2118 65%); }
+    button { font:inherit; cursor:pointer; touch-action:manipulation; }
+    .app { width:min(100%,560px); margin:0 auto; padding: max(16px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom)); }
+    header { text-align:center; padding:8px 0 16px; }
+    .eyebrow { font-size:.75rem; letter-spacing:.18em; color:#b7e5c7; font-weight:800; }
+    h1 { margin:4px 0; font-size:clamp(1.8rem,8vw,2.7rem); line-height:1; letter-spacing:-.04em; }
+    .subtitle { color:var(--muted); font-size:.92rem; margin-top:8px; }
+    .scoreboard { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; padding:14px; border:1px solid #ffffff26; border-radius:18px; background:#07180f80; }
+    .player { text-align:center; min-width:0; }
+    .player-name { font-size:.78rem; color:var(--muted); font-weight:800; letter-spacing:.08em; }
+    .score { font-size:2.5rem; line-height:1.1; font-weight:900; }
+    .dots { display:flex; justify-content:center; gap:5px; margin-top:8px; }
+    .dot { width:10px; height:10px; border-radius:50%; border:1px solid #a7cdb5; background:transparent; }
+    .dot.goal { background:var(--gold); border-color:var(--gold); }
+    .dot.miss { background:#e67d75; border-color:#e67d75; }
+    .vs { color:var(--gold); font-size:.75rem; font-weight:900; }
+    .panel { margin-top:14px; padding:16px; border:1px solid #ffffff24; border-radius:20px; background:#0b2c1eeb; box-shadow:0 16px 36px #0002; }
+    .phase-label { color:var(--gold); font-size:.72rem; font-weight:900; letter-spacing:.14em; text-transform:uppercase; }
+    h2 { margin:6px 0 8px; font-size:1.35rem; }
+    .help { color:var(--muted); font-size:.9rem; line-height:1.45; margin:0 0 14px; }
+    .goal-wrap { position:relative; padding:10px 7px 8px; }
+    .goal { position:relative; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,minmax(82px,1fr)); gap:4px; padding:6px; border:5px solid #eef7ef; border-bottom-width:8px; border-radius:8px 8px 2px 2px; background:repeating-linear-gradient(0deg,#dcece522 0 2px,transparent 2px 12px),repeating-linear-gradient(90deg,#dcece522 0 2px,transparent 2px 12px),#d8e9dc12; box-shadow:0 0 0 2px #0005, inset 0 0 22px #0003; }
+    .zone { border:1px solid #e8f8ebaa; border-radius:5px; color:#fff; background:#e8fff018; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-weight:800; text-shadow:0 1px 4px #000; }
+    .zone .arrow { font-size:1.65rem; line-height:1; }
+    .zone .zone-name { font-size:.68rem; font-weight:700; }
+    .zone:active { transform:scale(.98); background:#ffd16655; }
+    .zone.selected { outline:3px solid var(--gold); background:#ffd16642; }
+    .zone:disabled { cursor:default; opacity:.95; }
+    .goal-caption { display:flex; justify-content:space-between; color:#c6dfce; font-size:.72rem; margin:7px 2px 0; }
+    .primary,.secondary { width:100%; border:0; border-radius:13px; padding:14px 16px; font-weight:900; margin-top:12px; }
+    .primary { color:#163323; background:var(--gold); box-shadow:0 4px 0 #b88d35; }
+    .primary:disabled { opacity:.4; box-shadow:none; cursor:not-allowed; }
+    .secondary { color:var(--white); background:#ffffff12; border:1px solid #ffffff35; }
+    .privacy { text-align:center; padding:24px 8px 14px; }
+    .privacy-icon { font-size:3rem; margin-bottom:8px; }
+    .privacy h2 { font-size:1.6rem; }
+    .privacy .help { max-width:330px; margin:0 auto 12px; }
+    .result { text-align:center; padding:8px 0 14px; }
+    .result-icon { font-size:3.5rem; }
+    .result-title { color:var(--gold); font-size:2rem; font-weight:1000; margin:4px 0; }
+    .result-detail { color:var(--muted); line-height:1.5; }
+    .hidden { display:none !important; }
+    .footer { text-align:center; color:#90b49d; font-size:.72rem; padding:14px 6px 0; }
+    @media (max-width:380px) { .goal { grid-template-rows:repeat(2,minmax(72px,1fr)); } .zone { min-height:72px; } .zone .zone-name { font-size:.62rem; } .panel { padding:13px; } }
+  </style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <div class="eyebrow">DUELO DE FÚTBOL</div>
+    <h1>⚽ PENALTIS</h1>
+    <div class="subtitle">Dos jugadores · Una pantalla · Diez lanzamientos</div>
+  </header>
+
+  <section class="scoreboard" aria-label="Marcador">
+    <div class="player">
+      <div class="player-name">JUGADOR 1</div>
+      <div class="score" id="score1">0</div>
+      <div class="dots" id="dots1"></div>
+    </div>
+    <div class="vs">VS</div>
+    <div class="player">
+      <div class="player-name">JUGADOR 2</div>
+      <div class="score" id="score2">0</div>
+      <div class="dots" id="dots2"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="gamePanel">
+    <div id="phaseLabel" class="phase-label">PREPARADOS</div>
+    <h2 id="heading">¿Quién gana la tanda?</h2>
+    <p id="help" class="help">Cada jugador lanzará cinco penaltis. En cada turno, uno tira y el otro intenta parar. Las elecciones se ocultan hasta que ambos hayan confirmado.</p>
+
+    <div id="goalWrap" class="goal-wrap hidden">
+      <div class="goal" id="goal" aria-label="Portería con seis zonas">
+        <button class="zone" data-zone="0"><span class="arrow">↖</span><span class="zone-name">Izquierda alta</span></button>
+        <button class="zone" data-zone="1"><span class="arrow">↑</span><span class="zone-name">Centro alto</span></button>
+        <button class="zone" data-zone="2"><span class="arrow">↗</span><span class="zone-name">Derecha alta</span></button>
+        <button class="zone" data-zone="3"><span class="arrow">↙</span><span class="zone-name">Izquierda baja</span></button>
+        <button class="zone" data-zone="4"><span class="arrow">↓</span><span class="zone-name">Centro bajo</span></button>
+        <button class="zone" data-zone="5"><span class="arrow">↘</span><span class="zone-name">Derecha baja</span></button>
+      </div>
+      <div class="goal-caption"><span>🥅 PORTERÍA</span><span id="roundCaption">Penalti 1 de 10</span></div>
+    </div>
+
+    <div id="privacy" class="privacy hidden">
+      <div class="privacy-icon">🔒</div>
+      <h2 id="privacyTitle">Pasa el móvil</h2>
+      <p id="privacyText" class="help">Entrega el móvil al siguiente jugador. No se mostrará la elección anterior.</p>
+      <button class="primary" id="privacyButton">Estoy listo</button>
+    </div>
+
+    <div id="result" class="result hidden" aria-live="polite">
+      <div class="result-icon" id="resultIcon">⚽</div>
+      <div class="result-title" id="resultTitle">¡GOL!</div>
+      <div class="result-detail" id="resultDetail"></div>
+    </div>
+
+    <button class="primary" id="mainButton">Empezar partido</button>
+    <button class="secondary hidden" id="nextButton">Siguiente penalti</button>
+  </section>
+  <div class="footer">Versión inicial · El progreso se mantiene durante la partida</div>
+</main>
+
+<script>
+(() => {
+  const names = ["Izquierda alta", "Centro alto", "Derecha alta", "Izquierda baja", "Centro bajo", "Derecha baja"];
+  const arrows = ["↖", "↑", "↗", "↙", "↓", "↘"];
+  const $ = id => document.getElementById(id);
+  let state = "intro";
+  let shot = 0; // 0..9; player 1 shoots on even shots, player 2 on odd shots
+  let shooterChoice = null;
+  let keeperChoice = null;
+  let scores = [0, 0];
+  let outcomes = [[], []];
+  let chosen = null;
+
+  const zoneButtons = [...document.querySelectorAll(".zone")];
+
+  function shooter() { return shot % 2 === 0 ? 1 : 2; }
+  function keeper() { return shooter() === 1 ? 2 : 1; }
+  function playerName(n) { return "Jugador " + n; }
+
+  function renderScore() {
+    $("score1").textContent = scores[0];
+    $("score2").textContent = scores[1];
+    [1,2].forEach(p => {
+      const dots = $("dots" + p);
+      dots.innerHTML = "";
+      for (let i=0; i<5; i++) {
+        const dot = document.createElement("span");
+        dot.className = "dot" + (outcomes[p-1][i] === "goal" ? " goal" : outcomes[p-1][i] === "miss" ? " miss" : "");
+        dots.appendChild(dot);
+      }
+    });
+  }
+
+  function showZones() {
+    $("goalWrap").classList.remove("hidden");
+    zoneButtons.forEach(b => { b.disabled = false; b.classList.remove("selected"); });
+  }
+  function hideZones() {
+    $("goalWrap").classList.add("hidden");
+    zoneButtons.forEach(b => { b.disabled = true; b.classList.remove("selected"); });
+  }
+  function setState(next) { state = next; }
+  function setIntro() {
+    state = "intro";
+    $("phaseLabel").textContent = "PREPARADOS";
+    $("heading").textContent = "¿Quién gana la tanda?";
+    $("help").textContent = "Cada jugador lanzará cinco penaltis. En cada turno, uno tira y el otro intenta parar. Las elecciones se ocultan hasta que ambos hayan confirmado.";
+    $("privacy").classList.add("hidden");
+    $("result").classList.add("hidden");
+    hideZones();
+    $("mainButton").textContent = "Empezar partido";
+    $("mainButton").classList.remove("hidden");
+    $("nextButton").classList.add("hidden");
+  }
+  function startMatch() {
+    shot = 0; shooterChoice = null; keeperChoice = null; chosen = null;
+    scores = [0,0]; outcomes = [[],[]];
+    renderScore();
+    beginShooterTurn();
+  }
+  function beginShooterTurn() {
+    setState("shooter");
+    chosen = null; shooterChoice = null; keeperChoice = null;
+    $("phaseLabel").textContent = "PENALTI " + (shot + 1) + " DE 10";
+    $("heading").textContent = playerName(shooter()) + ": elige dónde tirar";
+    $("help").textContent = "Selecciona una de las seis zonas. Tu elección quedará oculta cuando pases el móvil.";
+    $("privacy").classList.add("hidden");
+    $("result").classList.add("hidden");
+    $("mainButton").classList.add("hidden");
+    $("nextButton").classList.add("hidden");
+    showZones();
+    $("roundCaption").textContent = "Penalti " + (shot + 1) + " de 10";
+  }
+  function onZoneClick(e) {
+    const b = e.currentTarget;
+    if (b.disabled || (state !== "shooter" && state !== "keeper")) return;
+    chosen = Number(b.dataset.zone);
+    zoneButtons.forEach(x => x.classList.toggle("selected", x === b));
+    $("mainButton").textContent = "Confirmar elección";
+    $("mainButton").classList.remove("hidden");
+    $("mainButton").disabled = false;
+  }
+  function confirmChoice() {
+    if (chosen === null) return;
+    if (state === "shooter") {
+      shooterChoice = chosen;
+      chosen = null;
+      hideZones();
+      $("mainButton").classList.add("hidden");
+      $("phaseLabel").textContent = "ELECCIÓN GUARDADA";
+      $("heading").textContent = "Pasa el móvil al portero";
+      $("help").textContent = "La elección del lanzador está oculta. Entrega el móvil al otro jugador para que elija dónde lanzarse.";
+      $("privacyTitle").textContent = playerName(keeper()) + ", te toca parar";
+      $("privacyText").textContent = "Cuando estés a solas con la pantalla, pulsa el botón. No verás la elección del lanzador.";
+      $("privacyButton").textContent = "Estoy listo";
+      $("privacy").classList.remove("hidden");
+      state = "passToKeeper";
+    } else if (state === "keeper") {
+      keeperChoice = chosen;
+      chosen = null;
+      hideZones();
+      $("mainButton").classList.add("hidden");
+      revealResult();
+    }
+  }
+  function readyKeeper() {
+    $("privacy").classList.add("hidden");
+    state = "keeper";
+    $("phaseLabel").textContent = "PORTERO";
+    $("heading").textContent = playerName(keeper()) + ": elige dónde parar";
+    $("help").textContent = "Selecciona una zona para intentar detener el disparo. Después se revelarán ambas elecciones.";
+    showZones();
+    $("mainButton").textContent = "Confirmar elección";
+    $("mainButton").classList.remove("hidden");
+    $("mainButton").disabled = true;
+  }
+  function revealResult() {
+    const isGoal = shooterChoice !== keeperChoice;
+    if (isGoal) scores[shooter()-1] += 1;
+    outcomes[shooter()-1].push(isGoal ? "goal" : "miss");
+    renderScore();
+    $("privacy").classList.add("hidden");
+    $("result").classList.remove("hidden");
+    $("phaseLabel").textContent = "RESULTADO DEL PENALTI";
+    $("heading").textContent = playerName(shooter()) + " tiró";
+    $("resultIcon").textContent = isGoal ? "⚽" : "🧤";
+    $("resultTitle").textContent = isGoal ? "¡GOL!" : "¡PARADA!";
+    $("resultDetail").innerHTML =
+      "<strong>" + playerName(shooter()) + "</strong> eligió " + arrows[shooterChoice] + " " + names[shooterChoice] +
+      ".<br><strong>" + playerName(keeper()) + "</strong> eligió " + arrows[keeperChoice] + " " + names[keeperChoice] +
+      ".<br>" + (isGoal ? "Las zonas eran diferentes." : "Las zonas coincidieron.") +
+      "<br><br>Marcador: " + scores[0] + " – " + scores[1];
+    $("mainButton").classList.add("hidden");
+    if (shot < 9) {
+      $("nextButton").textContent = "Siguiente penalti";
+      $("nextButton").classList.remove("hidden");
+      state = "result";
+    } else {
+      finishMatch();
+    }
+  }
+  function finishMatch() {
+    state = "finished";
+    $("nextButton").classList.add("hidden");
+    $("mainButton").textContent = "Jugar otra vez";
+    $("mainButton").classList.remove("hidden");
+    $("phaseLabel").textContent = "FINAL DEL PARTIDO";
+    $("heading").textContent = scores[0] === scores[1] ? "¡EMPATE!" : "¡" + playerName(scores[0] > scores[1] ? 1 : 2).toUpperCase() + " GANA!";
+    $("help").textContent = "Resultado final: Jugador 1 " + scores[0] + " – " + scores[1] + " Jugador 2.";
+    $("resultIcon").textContent = scores[0] === scores[1] ? "🤝" : "🏆";
+    $("resultTitle").textContent = scores[0] === scores[1] ? "¡EMPATE!" : "¡VICTORIA!";
+    $("resultDetail").textContent = "Cada jugador ha lanzado cinco penaltis.";
+    $("result").classList.remove("hidden");
+  }
+  function nextShot() {
+    shot++;
+    beginShooterTurn();
+  }
+
+  zoneButtons.forEach(b => b.addEventListener("click", onZoneClick));
+  $("mainButton").addEventListener("click", () => {
+    if (state === "intro" || state === "finished") startMatch();
+    else if (state === "shooter" || state === "keeper") confirmChoice();
+  });
+  $("privacyButton").addEventListener("click", readyKeeper);
+  $("nextButton").addEventListener("click", nextShot);
+
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+  }
+  renderScore();
+  setIntro();
+})();
+</script>
+</body>
+</html>
